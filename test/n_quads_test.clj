@@ -3,14 +3,15 @@
             [clojure.java.shell :as shell]
             [clojure.test :refer [deftest is testing]]
             [kotoba.compiler.core :as compiler]
-            [kotoba.compiler.ir :as ir]))
+            [kotoba.kir :as ir]))
 
 (def source (slurp "src/n_quads.kotoba"))
 (defn call [kir function & args] (ir/execute kir function (vec args)))
 (defn dstr [value] ["string" value])
 (defn dkw [value] ["keyword" value])
 (defn dmap [entries]
-  ["map" (->> entries (sort-by (comp str key)) (mapv (fn [[key value]] [key value])))])
+  ["map" (->> entries (sort-by (comp str key))
+              (mapv (fn [[key value]] [(dkw key) value])))])
 (defn dvec [& values] ["vector" (vec values)])
 (defn iri [value] (dmap {:rdf/type (dkw :iri) :value (dstr value)}))
 (defn blank [value] (dmap {:id (dstr value) :rdf/type (dkw :blank)}))
@@ -50,10 +51,11 @@
                (str "import(process.argv[1]).then(async host=>{"
                     "const j=await import('data:text/javascript;base64," js64 "');"
                     "const w=await host.instantiateKotoba(Buffer.from(process.argv[2],'base64'));"
-                    "const iri=v=>['map',[[':rdf/type',['keyword',':iri']],[':value',['string',v]]]];"
-                    "const lit=v=>['map',[[':rdf/type',['keyword',':literal']],[':value',['string',v]]]];"
-                    "const q=['map',[[':object',lit('o')],[':predicate',iri('p')],[':subject',iri('s')]]];"
-                    "const qs=['vector',[q]];const bad=['map',[[':rdf/type',['keyword',':unknown']]]];"
+                    "const map=e=>['map',e.map(([k,v])=>[['keyword',k],v])];"
+                    "const iri=v=>map([[':rdf/type',['keyword',':iri']],[':value',['string',v]]]);"
+                    "const lit=v=>map([[':rdf/type',['keyword',':literal']],[':value',['string',v]]]);"
+                    "const q=map([[':object',lit('o')],[':predicate',iri('p')],[':subject',iri('s')]]);"
+                    "const qs=['vector',[q]];const bad=map([[':rdf/type',['keyword',':unknown']]]);"
                     "const run=(x,doc)=>{if(x.quad(doc(q))!=='<s> <p> \\\"o\\\" .')throw Error('quad');"
                     "if(x['n-quads'](doc(qs))!=='<s> <p> \\\"o\\\" .\\n')throw Error('sequence');"
                     "let rejected=false;try{x.term(doc(bad))}catch(e){rejected=true}if(!rejected)throw Error('reject');};"
