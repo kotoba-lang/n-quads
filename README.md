@@ -11,5 +11,5 @@ Each call admits at most 32 quads and all strings remain within the compiler's
 ## Test
 
 ```bash
-clojure -M:test
+kbb -M:test
 ```
