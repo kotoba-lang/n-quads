@@ -1,5 +1,5 @@
 (ns n-quads-test
-  (:require [kotoba.bytes :as kbytes] [clojure.java.io :as io]
+  (:require [kotoba.lang.error :as kerror] [kotoba.bytes :as kbytes] [clojure.java.io :as io]
             [kotoba.process :as shell]
             [kotoba.test :refer [deftest is testing]]
             [kotoba.compiler.core :as compiler]
@@ -30,9 +30,9 @@
     (is (= "<s> <p> \"o\\\"\\n\"@en <g> .\n_:b0 <p> \"v\" .\n"
            (call kir 'n-quads (dvec first-quad second-quad))))
     (testing "unknown and malformed terms fail closed"
-      (is (thrown? clojure.lang.ExceptionInfo
+      (is (thrown? kerror/ExceptionInfo
                    (call kir 'term (dmap {:rdf/type (dkw :unknown)}))))
-      (is (thrown? clojure.lang.ExceptionInfo
+      (is (thrown? kerror/ExceptionInfo
                    (call kir 'term (dmap {:rdf/type (dkw :iri)})))))
     (is (= #{} (set (:effects kir))))))
 
